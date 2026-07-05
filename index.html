@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Pedido de Assistência Técnica — TecniMoove</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f3f4f6; color: #111; min-height: 100vh; }
@@ -28,6 +27,11 @@
     input::placeholder, textarea::placeholder { color: #9ca3af; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     textarea { resize: vertical; min-height: 100px; }
+    .photo-area { border: 2px dashed #d1d5db; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: border-color .15s; }
+    .photo-area:hover { border-color: #2563eb; }
+    .photo-area p { font-size: 13px; color: #6b7280; margin-top: 6px; }
+    .photo-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .photo-thumb { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb; }
     .submit-btn { width: 100%; padding: 14px; background: #2563eb; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background .15s; margin-top: 4px; }
     .submit-btn:hover { background: #1d4ed8; }
     .submit-btn:disabled { background: #93c5fd; cursor: not-allowed; }
@@ -38,6 +42,7 @@
     .success p { font-size: 14px; color: #6b7280; margin-bottom: 6px; }
     .ref-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 8px; margin: 10px 0 16px; }
     .new-btn { background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .progress { font-size: 12px; color: #6b7280; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -55,11 +60,8 @@
 </div>
 
 <div class="container">
-
   <div id="formSection">
-    <div class="info-box">
-      📋 Preencha o formulário para submeter o seu pedido. Os campos com * são obrigatórios.
-    </div>
+    <div class="info-box">📋 Preencha o formulário para submeter o seu pedido. Os campos com * são obrigatórios.</div>
 
     <div class="card">
       <div class="section-title"><span class="section-num">1</span> Dados do Cliente</div>
@@ -79,15 +81,24 @@
       </div>
       <div class="field">
         <label>Técnico de Assistência <span class="opt">(opcional)</span></label>
-        <select id="techSelect">
-          <option value="">Selecionar técnico...</option>
-        </select>
+        <select id="techSelect"><option value="">Selecionar técnico...</option></select>
       </div>
     </div>
 
     <div class="card">
       <div class="section-title"><span class="section-num">3</span> Descrição do Problema</div>
       <div class="field"><label>Descrição detalhada *</label><textarea id="description" placeholder="Descreva o problema com o máximo detalhe possível..."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">4</span> Fotografias <span class="opt" style="font-weight:400;font-size:12px">(opcional)</span></div>
+      <div class="photo-area" onclick="document.getElementById('photoInput').click()">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+        <p>Toque para adicionar fotografias</p>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos(this)" />
+      <div class="photo-preview" id="photoPreview"></div>
+      <div class="progress" id="photoProgress"></div>
     </div>
 
     <button class="submit-btn" id="submitBtn" onclick="submitForm()">Submeter Pedido de Assistência</button>
@@ -104,31 +115,52 @@
     <br/>
     <button class="new-btn" onclick="resetForm()">Novo Pedido</button>
   </div>
-
 </div>
 
 <script>
 const SUPABASE_URL = 'https://gwaeicsllnolkvghxnju.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3YWVpY3NsbG5vbGt2Z2h4bmp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODgzMTMsImV4cCI6MjA4OTY2NDMxM30.hZXIEVu31spb0Is7GxUYjTSv6NiDeskJyLygxLJ3Ipo';
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3YWVpY3NsbG5vbGt2Z2h4bmp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODgzMTMsImV4cCI6MjA4OTY2NDMxM30.hZXIEVu31spb0Is7GxUYjTSv6NiDeskJyLygxLJ3Ipo';
 
-// Load AT technicians
-async function loadTechnicians() {
-  try {
-    const { data } = await sb.from('at_technicians').select('id, name').order('name');
-    const sel = document.getElementById('techSelect');
-    if (data) {
-      data.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.id;
-        opt.textContent = t.name;
-        sel.appendChild(opt);
-      });
-    }
-  } catch(e) { console.warn('Could not load technicians', e); }
+const selectedPhotos = [];
+
+// Load technicians via REST
+fetch(`${SUPABASE_URL}/rest/v1/at_technicians?select=id,name&order=name`, {
+  headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY }
+}).then(r => r.json()).then(data => {
+  if (!Array.isArray(data)) return;
+  const sel = document.getElementById('techSelect');
+  data.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+}).catch(e => console.warn('Technicians:', e));
+
+function handlePhotos(input) {
+  const preview = document.getElementById('photoPreview');
+  Array.from(input.files).forEach(file => {
+    if (selectedPhotos.length >= 5) return;
+    selectedPhotos.push(file);
+    const img = document.createElement('img');
+    img.className = 'photo-thumb';
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
+  });
+  input.value = '';
 }
-loadTechnicians();
+
+async function uploadPhoto(file, ref) {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `assistencia/${ref}/${Date.now()}.${ext}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/assistance-photos/${path}`, {
+    method: 'POST',
+    headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY, 'Content-Type': file.type },
+    body: file
+  });
+  if (!res.ok) { console.warn('Upload failed', await res.text()); return null; }
+  return `${SUPABASE_URL}/storage/v1/object/public/assistance-photos/${path}`;
+}
 
 async function submitForm() {
   const clientName = document.getElementById('clientName').value.trim();
@@ -144,7 +176,7 @@ async function submitForm() {
     alert('Por favor preencha todos os campos obrigatórios (Nome, NIF, Telemóvel e Descrição).');
     return;
   }
-  if (nif.length !== 9) {
+  if (nif.replace(/\s/g,'').length !== 9) {
     alert('O NIF deve ter 9 dígitos.');
     return;
   }
@@ -155,16 +187,25 @@ async function submitForm() {
 
   try {
     const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
+    const pad = n => String(n).padStart(2,'0');
     const ref = `AT${String(now.getFullYear()).slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${String(Math.floor(Math.random()*900)+100)}`;
+
+    // Upload photos
+    let imageUrls = [];
+    if (selectedPhotos.length > 0) {
+      document.getElementById('photoProgress').textContent = 'A carregar fotografias...';
+      for (const photo of selectedPhotos) {
+        const url = await uploadPhoto(photo, ref);
+        if (url) imageUrls.push(url);
+      }
+    }
 
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + 14);
     const deadlineStr = deadline.toISOString().split('T')[0];
-
     const fullDescription = `NIF: ${nif} | Tel: ${phone}${email ? ' | Email: ' + email : ''}\n\n${description}`;
 
-    const { error } = await sb.from('assistance_requests').insert({
+    const body = {
       reference_number: ref,
       client_name: clientName,
       brand: brand || 'Por definir',
@@ -177,10 +218,25 @@ async function submitForm() {
       intervention_type: 'Assistência Técnica',
       delivery_method: 'at',
       technician_id: techId || null,
+      image_urls: imageUrls.length > 0 ? imageUrls : null,
       added_to_daily_plan: false,
+    };
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/assistance_requests`, {
+      method: 'POST',
+      headers: {
+        'apikey': ANON_KEY,
+        'Authorization': 'Bearer ' + ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(body)
     });
 
-    if (error) throw error;
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText);
+    }
 
     document.getElementById('refDisplay').textContent = '#' + ref;
     if (phone) document.getElementById('phoneMsg').textContent = `Entraremos em contacto para o ${phone}.`;
@@ -192,12 +248,16 @@ async function submitForm() {
     alert('Erro ao submeter pedido: ' + (err.message || JSON.stringify(err)));
     btn.disabled = false;
     btn.textContent = 'Submeter Pedido de Assistência';
+    document.getElementById('photoProgress').textContent = '';
   }
 }
 
 function resetForm() {
   ['clientName','nif','phone','email','brand','model','description'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('techSelect').value = '';
+  document.getElementById('photoPreview').innerHTML = '';
+  document.getElementById('photoProgress').textContent = '';
+  selectedPhotos.length = 0;
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('submitBtn').textContent = 'Submeter Pedido de Assistência';
   document.getElementById('formSection').style.display = 'block';
