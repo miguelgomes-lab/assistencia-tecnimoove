@@ -98,7 +98,16 @@
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="section-num">2</span> Produto</div>
+      <div class="section-title"><span class="section-num">2</span> Técnico de Conta</div>
+      <div class="field">
+        <label>O seu técnico de conta *</label>
+        <div id="techCards" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+        <p id="techGeoNote" style="font-size:11px;color:#6b7280;margin-top:6px;display:none;">📍 Sugestão baseada na sua localização</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">3</span> Produto</div>
       <div class="field row2">
         <div><label>Marca <span class="opt">(opcional)</span></label><input type="text" id="brand" placeholder="ex: Permobil" /></div>
         <div><label>Modelo <span class="opt">(opcional)</span></label><input type="text" id="model" placeholder="ex: M3 Corpus" /></div>
@@ -106,12 +115,12 @@
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="section-num">3</span> Descrição do Problema</div>
+      <div class="section-title"><span class="section-num">4</span> Descrição do Problema</div>
       <div class="field"><label>Descrição detalhada *</label><textarea id="description" placeholder="Descreva o problema com o máximo detalhe possível..."></textarea></div>
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="section-num">4</span> Fotografias / Vídeos <span class="opt" style="font-weight:400;font-size:12px">(opcional, máx. 5)</span></div>
+      <div class="section-title"><span class="section-num">5</span> Fotografias / Vídeos <span class="opt" style="font-weight:400;font-size:12px">(opcional, máx. 5)</span></div>
       <div class="photo-area" onclick="document.getElementById('mediaInput').click()">
         <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
         <p>Toque para adicionar fotos ou vídeos</p>
@@ -156,6 +165,55 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const selectedMedia = [];
 
+// Commercial technicians
+const TECHNICIANS = [
+  { id: "miguel", name: "Miguel Gomes", region: "sul", initials: "MG", color: "#2563eb" },
+  { id: "marco",  name: "Marco Mendes", region: "norte", initials: "MM", color: "#3d9e41" },
+  { id: "filipe", name: "Filipe Vieira", region: "sul", initials: "FV", color: "#e07c2a" },
+];
+
+let selectedTechId = null;
+
+function renderTechCards(suggestedId) {
+  const container = document.getElementById('techCards');
+  container.innerHTML = '';
+  TECHNICIANS.forEach(tech => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.id = `tech-${tech.id}`;
+    const isSuggested = tech.id === suggestedId;
+    card.style.cssText = `display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;border:2px solid ${selectedTechId === tech.id ? tech.color : '#e8e4dc'};background:${selectedTechId === tech.id ? tech.color + '12' : '#fff'};cursor:pointer;text-align:left;transition:all .15s;`;
+    card.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:50%;background:${tech.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${tech.initials}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#1e2729;">${tech.name}</div>
+        <div style="font-size:11px;color:#6b7280;">${tech.region === 'norte' ? 'Região Norte' : 'Região Sul / Centro'}${isSuggested ? ' · <span style="color:' + tech.color + '">sugerido</span>' : ''}</div>
+      </div>
+      ${selectedTechId === tech.id ? '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="' + tech.color + '" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+    `;
+    card.onclick = () => { selectedTechId = tech.id; renderTechCards(suggestedId); };
+    container.appendChild(card);
+  });
+}
+
+// Try geolocation to suggest technician
+function tryGeoSuggest() {
+  if (!navigator.geolocation) { renderTechCards(null); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    // Pombal is approx lat 39.92 — above this = Norte → suggest Marco
+    const isNorth = pos.coords.latitude > 39.92;
+    const suggested = isNorth ? 'marco' : null;
+    if (isNorth && !selectedTechId) {
+      selectedTechId = 'marco';
+      document.getElementById('techGeoNote').style.display = 'block';
+    }
+    renderTechCards(suggested);
+  }, () => { renderTechCards(null); }); // on error just show without suggestion
+}
+
+renderTechCards(null);
+tryGeoSuggest();
+
 window.handleMedia = function(input) {
   const preview = document.getElementById('mediaPreview');
   Array.from(input.files).forEach(file => {
@@ -187,6 +245,10 @@ window.submitForm = async function() {
 
   if (!clientName || !nif || !phone || !description) {
     alert('Por favor preencha todos os campos obrigatórios (Nome, NIF, Telemóvel e Descrição).');
+    return;
+  }
+  if (!selectedTechId) {
+    alert('Por favor seleccione o seu técnico de conta.');
     return;
   }
   if (nif.replace(/\s/g,'').length !== 9) {
@@ -231,6 +293,8 @@ window.submitForm = async function() {
       media_urls: mediaUrls,
       status: 'pendente',
       source: 'formulario_publico',
+      commercial_technician_id: selectedTechId,
+      commercial_technician_name: TECHNICIANS.find(t => t.id === selectedTechId)?.name || null,
       created_at: serverTimestamp(),
     });
 
@@ -254,6 +318,8 @@ window.resetForm = function() {
   document.getElementById('mediaPreview').innerHTML = '';
   document.getElementById('progressMsg').textContent = '';
   selectedMedia.length = 0;
+  selectedTechId = null;
+  renderTechCards(null);
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('submitBtn').textContent = 'Submeter Pedido de Assistência';
   document.getElementById('formSection').style.display = 'block';
