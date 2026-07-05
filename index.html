@@ -4,45 +4,69 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Pedido de Assistência Técnica — TecniMoove</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f3f4f6; color: #111; min-height: 100vh; }
-    .header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 14px 16px; position: sticky; top: 0; z-index: 10; }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: #f9f8f5; color: #1e2729; min-height: 100vh; }
+
+    /* Colors */
+    :root {
+      --primary: #3d9e41;
+      --primary-dark: #2e7d32;
+      --primary-light: #e8f5e9;
+      --primary-border: #a5d6a7;
+      --accent: #e07c2a;
+      --bg: #f9f8f5;
+      --card: #ffffff;
+      --border: #e8e4dc;
+      --muted: #6b7b7d;
+      --text: #1e2729;
+    }
+
+    .header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 16px; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     .header-inner { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
-    .logo { width: 36px; height: 36px; border-radius: 10px; background: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo { width: 38px; height: 38px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .logo svg { width: 20px; height: 20px; }
-    .header h1 { font-size: 15px; font-weight: 700; line-height: 1.2; }
-    .header p { font-size: 12px; color: #6b7280; }
+    .header h1 { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--text); }
+    .header p { font-size: 12px; color: var(--muted); }
+
     .container { max-width: 560px; margin: 0 auto; padding: 20px 16px 40px; }
-    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px 14px; margin-bottom: 20px; font-size: 13px; color: #1d4ed8; line-height: 1.4; }
-    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-    .section-title { font-size: 13px; font-weight: 600; color: #374151; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-    .section-num { width: 24px; height: 24px; border-radius: 50%; background: #2563eb; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .info-box { background: var(--primary-light); border: 1px solid var(--primary-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 20px; font-size: 13px; color: var(--primary-dark); line-height: 1.5; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .section-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
-    label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 5px; }
-    .opt { color: #9ca3af; font-weight: 400; }
-    input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; font-family: inherit; color: #111; background: #fff; outline: none; transition: border-color .15s; -webkit-appearance: none; }
-    input:focus, textarea:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-    input::placeholder, textarea::placeholder { color: #9ca3af; }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 5px; }
+    .opt { color: var(--muted); font-weight: 400; }
+    input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; font-family: inherit; color: var(--text); background: #fff; outline: none; transition: border-color .15s; -webkit-appearance: none; }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(61,158,65,.12); }
+    input::placeholder, textarea::placeholder { color: #aab4b5; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     textarea { resize: vertical; min-height: 100px; }
-    .photo-area { border: 2px dashed #d1d5db; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: border-color .15s; }
-    .photo-area:hover { border-color: #2563eb; }
-    .photo-area p { font-size: 13px; color: #6b7280; margin-top: 6px; }
+
+    .photo-area { border: 2px dashed var(--border); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: border-color .15s; background: #fafaf9; }
+    .photo-area:hover { border-color: var(--primary); background: var(--primary-light); }
+    .photo-area p { font-size: 13px; color: var(--muted); margin-top: 6px; }
     .photo-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .photo-thumb { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb; }
-    .submit-btn { width: 100%; padding: 14px; background: #2563eb; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background .15s; margin-top: 4px; }
-    .submit-btn:hover { background: #1d4ed8; }
-    .submit-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    .photo-thumb { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); }
+
+    .submit-btn { width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background .15s; margin-top: 4px; font-family: inherit; letter-spacing: 0.01em; }
+    .submit-btn:hover { background: var(--primary-dark); }
+    .submit-btn:disabled { background: #a5d6a7; cursor: not-allowed; }
+
+    .progress { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center; min-height: 18px; }
+
     .success { display: none; text-align: center; padding: 40px 20px; }
-    .success-icon { width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
-    .success-icon svg { width: 32px; height: 32px; color: #16a34a; }
-    .success h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .success p { font-size: 14px; color: #6b7280; margin-bottom: 6px; }
-    .ref-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 8px; margin: 10px 0 16px; }
-    .new-btn { background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
-    .progress { font-size: 12px; color: #6b7280; margin-top: 6px; text-align: center; }
+    .success-icon { width: 72px; height: 72px; border-radius: 50%; background: var(--primary-light); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+    .success-icon svg { width: 36px; height: 36px; color: var(--primary); }
+    .success h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .success p { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+    .ref-badge { display: inline-block; background: var(--primary-light); border: 1px solid var(--primary-border); color: var(--primary-dark); font-weight: 700; font-size: 16px; padding: 8px 18px; border-radius: 10px; margin: 12px 0 18px; }
+    .new-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .new-btn:hover { background: var(--border); }
   </style>
 </head>
 <body>
@@ -87,13 +111,13 @@
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="section-num">4</span> Fotografias <span class="opt" style="font-weight:400;font-size:12px">(opcional, máx. 5)</span></div>
-      <div class="photo-area" onclick="document.getElementById('photoInput').click()">
+      <div class="section-title"><span class="section-num">4</span> Fotografias / Vídeos <span class="opt" style="font-weight:400;font-size:12px">(opcional, máx. 5)</span></div>
+      <div class="photo-area" onclick="document.getElementById('mediaInput').click()">
         <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
-        <p>Toque para adicionar fotografias</p>
+        <p>Toque para adicionar fotos ou vídeos</p>
       </div>
-      <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos(this)" />
-      <div class="photo-preview" id="photoPreview"></div>
+      <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleMedia(this)" />
+      <div class="photo-preview" id="mediaPreview"></div>
     </div>
 
     <div class="progress" id="progressMsg"></div>
@@ -102,7 +126,7 @@
 
   <div class="success" id="successSection">
     <div class="success-icon">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
     </div>
     <h2>Pedido Submetido!</h2>
     <p>O seu pedido foi registado com sucesso.</p>
@@ -130,18 +154,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const selectedMedia = [];
 
-const selectedPhotos = [];
-
-window.handlePhotos = function(input) {
-  const preview = document.getElementById('photoPreview');
+window.handleMedia = function(input) {
+  const preview = document.getElementById('mediaPreview');
   Array.from(input.files).forEach(file => {
-    if (selectedPhotos.length >= 5) return;
-    selectedPhotos.push(file);
-    const img = document.createElement('img');
-    img.className = 'photo-thumb';
-    img.src = URL.createObjectURL(file);
-    preview.appendChild(img);
+    if (selectedMedia.length >= 5) return;
+    selectedMedia.push(file);
+    if (file.type.startsWith('video/')) {
+      const div = document.createElement('div');
+      div.style.cssText = 'width:72px;height:72px;border-radius:8px;background:#1e2729;display:flex;align-items:center;justify-content:center;border:1px solid #e8e4dc;flex-shrink:0;';
+      div.innerHTML = '<svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+      preview.appendChild(div);
+    } else {
+      const img = document.createElement('img');
+      img.className = 'photo-thumb';
+      img.src = URL.createObjectURL(file);
+      preview.appendChild(img);
+    }
   });
   input.value = '';
 };
@@ -174,17 +204,16 @@ window.submitForm = async function() {
     const pad = n => String(n).padStart(2,'0');
     const ref_num = `AT${String(now.getFullYear()).slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${String(Math.floor(Math.random()*900)+100)}`;
 
-    // Upload photos to Firebase Storage
-    let imageUrls = [];
-    if (selectedPhotos.length > 0) {
-      progress.textContent = 'A carregar fotografias...';
-      for (let i = 0; i < selectedPhotos.length; i++) {
-        const photo = selectedPhotos[i];
-        progress.textContent = `A carregar fotografia ${i+1} de ${selectedPhotos.length}...`;
-        const storageRef = ref(storage, `assistencia/${ref_num}/${Date.now()}_${i}.jpg`);
-        await uploadBytes(storageRef, photo);
+    let mediaUrls = [];
+    if (selectedMedia.length > 0) {
+      for (let i = 0; i < selectedMedia.length; i++) {
+        const file = selectedMedia[i];
+        const ext = file.name.split('.').pop() || (file.type.startsWith('video/') ? 'mp4' : 'jpg');
+        progress.textContent = `A carregar ficheiro ${i+1} de ${selectedMedia.length}...`;
+        const storageRef = ref(storage, `assistencia/${ref_num}/${Date.now()}_${i}.${ext}`);
+        await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
-        imageUrls.push(url);
+        mediaUrls.push(url);
       }
     }
 
@@ -199,8 +228,9 @@ window.submitForm = async function() {
       brand: brand || null,
       model: model || null,
       description: description,
-      image_urls: imageUrls,
+      media_urls: mediaUrls,
       status: 'pendente',
+      source: 'formulario_publico',
       created_at: serverTimestamp(),
     });
 
@@ -208,6 +238,7 @@ window.submitForm = async function() {
     if (phone) document.getElementById('phoneMsg').textContent = `Entraremos em contacto para o ${phone}.`;
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('successSection').style.display = 'block';
+    progress.textContent = '';
     window.scrollTo(0, 0);
   } catch (err) {
     console.error(err);
@@ -220,9 +251,9 @@ window.submitForm = async function() {
 
 window.resetForm = function() {
   ['clientName','nif','phone','email','brand','model','description'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('photoPreview').innerHTML = '';
+  document.getElementById('mediaPreview').innerHTML = '';
   document.getElementById('progressMsg').textContent = '';
-  selectedPhotos.length = 0;
+  selectedMedia.length = 0;
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('submitBtn').textContent = 'Submeter Pedido de Assistência';
   document.getElementById('formSection').style.display = 'block';
