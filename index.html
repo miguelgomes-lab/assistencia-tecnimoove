@@ -42,7 +42,7 @@
     .success p { font-size: 14px; color: #6b7280; margin-bottom: 6px; }
     .ref-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 8px; margin: 10px 0 16px; }
     .new-btn { background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
-    .progress { font-size: 12px; color: #6b7280; margin-top: 6px; }
+    .progress { font-size: 12px; color: #6b7280; margin-top: 6px; text-align: center; }
   </style>
 </head>
 <body>
@@ -79,10 +79,6 @@
         <div><label>Marca <span class="opt">(opcional)</span></label><input type="text" id="brand" placeholder="ex: Permobil" /></div>
         <div><label>Modelo <span class="opt">(opcional)</span></label><input type="text" id="model" placeholder="ex: M3 Corpus" /></div>
       </div>
-      <div class="field">
-        <label>Técnico de Assistência <span class="opt">(opcional)</span></label>
-        <select id="techSelect"><option value="">Selecionar técnico...</option></select>
-      </div>
     </div>
 
     <div class="card">
@@ -91,16 +87,16 @@
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="section-num">4</span> Fotografias <span class="opt" style="font-weight:400;font-size:12px">(opcional)</span></div>
+      <div class="section-title"><span class="section-num">4</span> Fotografias <span class="opt" style="font-weight:400;font-size:12px">(opcional, máx. 5)</span></div>
       <div class="photo-area" onclick="document.getElementById('photoInput').click()">
         <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
         <p>Toque para adicionar fotografias</p>
       </div>
       <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos(this)" />
       <div class="photo-preview" id="photoPreview"></div>
-      <div class="progress" id="photoProgress"></div>
     </div>
 
+    <div class="progress" id="progressMsg"></div>
     <button class="submit-btn" id="submitBtn" onclick="submitForm()">Submeter Pedido de Assistência</button>
   </div>
 
@@ -117,27 +113,27 @@
   </div>
 </div>
 
-<script>
-const SUPABASE_URL = 'https://fpswpmwcvudpmmmblika.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwc3dwbXdjdnVkcG1tbWJsamthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTYyNTMsImV4cCI6MjA5MjA5MjI1M30.HgdPdeCRkxkvfc3QBrxtjRnUxqeQuxhpOq6yqyQme1Y';
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDG_N7a1XZ3MO3umKuGhYdbd31JE-lw0Mo",
+  authDomain: "tecnimoove-assistencia.firebaseapp.com",
+  projectId: "tecnimoove-assistencia",
+  storageBucket: "tecnimoove-assistencia.firebasestorage.app",
+  messagingSenderId: "318208595908",
+  appId: "1:318208595908:web:2cab8a07cca9d1e381f691"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 const selectedPhotos = [];
 
-// Load technicians via REST
-fetch(`${SUPABASE_URL}/rest/v1/at_technicians?select=id,name&order=name`, {
-  headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY }
-}).then(r => r.json()).then(data => {
-  if (!Array.isArray(data)) return;
-  const sel = document.getElementById('techSelect');
-  data.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.name;
-    sel.appendChild(opt);
-  });
-}).catch(e => console.warn('Technicians:', e));
-
-function handlePhotos(input) {
+window.handlePhotos = function(input) {
   const preview = document.getElementById('photoPreview');
   Array.from(input.files).forEach(file => {
     if (selectedPhotos.length >= 5) return;
@@ -148,21 +144,9 @@ function handlePhotos(input) {
     preview.appendChild(img);
   });
   input.value = '';
-}
+};
 
-async function uploadPhoto(file, ref) {
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = `assistencia/${ref}/${Date.now()}.${ext}`;
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/assistance-photos/${path}`, {
-    method: 'POST',
-    headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY, 'Content-Type': file.type },
-    body: file
-  });
-  if (!res.ok) { console.warn('Upload failed', await res.text()); return null; }
-  return `${SUPABASE_URL}/storage/v1/object/public/assistance-photos/${path}`;
-}
-
-async function submitForm() {
+window.submitForm = async function() {
   const clientName = document.getElementById('clientName').value.trim();
   const nif = document.getElementById('nif').value.trim();
   const phone = document.getElementById('phone').value.trim();
@@ -170,7 +154,6 @@ async function submitForm() {
   const brand = document.getElementById('brand').value.trim();
   const model = document.getElementById('model').value.trim();
   const description = document.getElementById('description').value.trim();
-  const techId = document.getElementById('techSelect').value;
 
   if (!clientName || !nif || !phone || !description) {
     alert('Por favor preencha todos os campos obrigatórios (Nome, NIF, Telemóvel e Descrição).');
@@ -182,63 +165,46 @@ async function submitForm() {
   }
 
   const btn = document.getElementById('submitBtn');
+  const progress = document.getElementById('progressMsg');
   btn.disabled = true;
   btn.textContent = 'A enviar...';
 
   try {
     const now = new Date();
     const pad = n => String(n).padStart(2,'0');
-    const ref = `AT${String(now.getFullYear()).slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${String(Math.floor(Math.random()*900)+100)}`;
+    const ref_num = `AT${String(now.getFullYear()).slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${String(Math.floor(Math.random()*900)+100)}`;
 
-    // Upload photos
+    // Upload photos to Firebase Storage
     let imageUrls = [];
     if (selectedPhotos.length > 0) {
-      document.getElementById('photoProgress').textContent = 'A carregar fotografias...';
-      for (const photo of selectedPhotos) {
-        const url = await uploadPhoto(photo, ref);
-        if (url) imageUrls.push(url);
+      progress.textContent = 'A carregar fotografias...';
+      for (let i = 0; i < selectedPhotos.length; i++) {
+        const photo = selectedPhotos[i];
+        progress.textContent = `A carregar fotografia ${i+1} de ${selectedPhotos.length}...`;
+        const storageRef = ref(storage, `assistencia/${ref_num}/${Date.now()}_${i}.jpg`);
+        await uploadBytes(storageRef, photo);
+        const url = await getDownloadURL(storageRef);
+        imageUrls.push(url);
       }
     }
 
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + 14);
-    const deadlineStr = deadline.toISOString().split('T')[0];
-    const fullDescription = `NIF: ${nif} | Tel: ${phone}${email ? ' | Email: ' + email : ''}\n\n${description}`;
+    progress.textContent = 'A guardar pedido...';
 
-    const body = {
-      reference_number: ref,
+    await addDoc(collection(db, 'assistance_requests'), {
+      reference_number: ref_num,
       client_name: clientName,
-      brand: brand || 'Por definir',
-      model: model || 'Por definir',
-      description: fullDescription,
-      priority: 'normal',
-      deadline: deadlineStr,
+      client_nif: nif,
+      client_phone: phone,
+      client_email: email || null,
+      brand: brand || null,
+      model: model || null,
+      description: description,
+      image_urls: imageUrls,
       status: 'pendente',
-      segment: 'Assistência',
-      intervention_type: 'Assistência Técnica',
-      delivery_method: 'at',
-      // technician_id removed — causes RLS issue on referenced table
-      image_urls: imageUrls.length > 0 ? imageUrls : null,
-      added_to_daily_plan: false,
-    };
-
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/assistance_requests`, {
-      method: 'POST',
-      headers: {
-        'apikey': ANON_KEY,
-        'Authorization': 'Bearer ' + ANON_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(body)
+      created_at: serverTimestamp(),
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText);
-    }
-
-    document.getElementById('refDisplay').textContent = '#' + ref;
+    document.getElementById('refDisplay').textContent = '#' + ref_num;
     if (phone) document.getElementById('phoneMsg').textContent = `Entraremos em contacto para o ${phone}.`;
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('successSection').style.display = 'block';
@@ -248,22 +214,21 @@ async function submitForm() {
     alert('Erro ao submeter pedido: ' + (err.message || JSON.stringify(err)));
     btn.disabled = false;
     btn.textContent = 'Submeter Pedido de Assistência';
-    document.getElementById('photoProgress').textContent = '';
+    progress.textContent = '';
   }
-}
+};
 
-function resetForm() {
+window.resetForm = function() {
   ['clientName','nif','phone','email','brand','model','description'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('techSelect').value = '';
   document.getElementById('photoPreview').innerHTML = '';
-  document.getElementById('photoProgress').textContent = '';
+  document.getElementById('progressMsg').textContent = '';
   selectedPhotos.length = 0;
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('submitBtn').textContent = 'Submeter Pedido de Assistência';
   document.getElementById('formSection').style.display = 'block';
   document.getElementById('successSection').style.display = 'none';
   window.scrollTo(0, 0);
-}
+};
 </script>
 </body>
 </html>
