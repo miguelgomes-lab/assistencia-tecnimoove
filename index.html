@@ -217,7 +217,7 @@ async function submitForm() {
       segment: 'Assistência',
       intervention_type: 'Assistência Técnica',
       delivery_method: 'at',
-      technician_id: techId || null,
+      // technician_id removed — causes RLS issue on referenced table
       image_urls: imageUrls.length > 0 ? imageUrls : null,
       added_to_daily_plan: false,
     };
