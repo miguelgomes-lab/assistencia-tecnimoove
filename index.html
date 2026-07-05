@@ -222,12 +222,13 @@ async function submitForm() {
       added_to_daily_plan: false,
     };
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-assistance`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/assistance_requests`, {
       method: 'POST',
       headers: {
         'apikey': ANON_KEY,
         'Authorization': 'Bearer ' + ANON_KEY,
         'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify(body)
     });
@@ -236,8 +237,6 @@ async function submitForm() {
       const errText = await res.text();
       throw new Error(errText);
     }
-    const result = await res.json();
-    if (result.error) throw new Error(result.error);
 
     document.getElementById('refDisplay').textContent = '#' + ref;
     if (phone) document.getElementById('phoneMsg').textContent = `Entraremos em contacto para o ${phone}.`;
