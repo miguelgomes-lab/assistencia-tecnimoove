@@ -91,7 +91,7 @@
       <div class="section-title"><span class="section-num">1</span> Dados do Cliente</div>
       <div class="field"><label>Nome completo *</label><input type="text" id="clientName" placeholder="ex: João Silva" /></div>
       <div class="field row2">
-        <div><label>NIF *</label><input type="text" id="nif" placeholder="123456789" maxlength="9" inputmode="numeric" /></div>
+        <div><label>NIF <span class="opt">(opcional)</span></label><input type="text" id="nif" placeholder="123456789" maxlength="9" inputmode="numeric" /></div>
         <div><label>Telemóvel *</label><input type="tel" id="phone" placeholder="912 345 678" /></div>
       </div>
       <div class="field"><label>Email <span class="opt">(opcional)</span></label><input type="email" id="email" placeholder="exemplo@email.com" /></div>
@@ -186,11 +186,12 @@ window.submitForm = async function() {
   const model = document.getElementById('model').value.trim();
   const description = document.getElementById('description').value.trim();
 
-  if (!clientName || !nif || !phone || !description) {
-    alert('Por favor preencha todos os campos obrigatórios (Nome, NIF, Telemóvel e Descrição).');
+  if (!clientName || !phone || !description) {
+    alert('Por favor preencha todos os campos obrigatórios (Nome completo, Telemóvel e Descrição do problema).');
     return;
   }
-  if (nif.replace(/\s/g,'').length !== 9) {
+  // O NIF é opcional; escrito, tem de ter os 9 dígitos.
+  if (nif && nif.replace(/\s/g,'').length !== 9) {
     alert('O NIF deve ter 9 dígitos.');
     return;
   }
@@ -223,7 +224,7 @@ window.submitForm = async function() {
     await addDoc(collection(db, 'assistance_requests'), {
       reference_number: ref_num,
       client_name: clientName,
-      client_nif: nif,
+      client_nif: nif || null,
       client_phone: phone,
       client_email: email || null,
       brand: brand || null,
