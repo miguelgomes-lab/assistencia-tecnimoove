@@ -1,0 +1,4 @@
+# Formulário para clientes: só por link, fora dos motores de busca.
+# Não se põe "Disallow: /": o motor tem de poder entrar para ler o noindex.
+User-agent: *
+Allow: /
