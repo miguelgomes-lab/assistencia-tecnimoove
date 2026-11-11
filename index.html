@@ -91,25 +91,25 @@
 
     <div class="card">
       <div class="section-title"><span class="section-num">1</span> Dados do Cliente</div>
-      <div class="field"><label>Nome completo *</label><input type="text" id="clientName" placeholder="ex: João Silva" /></div>
+      <div class="field"><label>Nome completo *</label><input type="text" id="clientName" placeholder="ex: João Silva" maxlength="120" /></div>
       <div class="field row2">
         <div><label>NIF <span class="opt">(opcional)</span></label><input type="text" id="nif" placeholder="123456789" maxlength="9" inputmode="numeric" /></div>
-        <div><label>Telemóvel *</label><input type="tel" id="phone" placeholder="912 345 678" /></div>
+        <div><label>Telemóvel *</label><input type="tel" id="phone" placeholder="912 345 678" maxlength="30" /></div>
       </div>
-      <div class="field"><label>Email <span class="opt">(opcional)</span></label><input type="email" id="email" placeholder="exemplo@email.com" /></div>
+      <div class="field"><label>Email <span class="opt">(opcional)</span></label><input type="email" id="email" placeholder="exemplo@email.com" maxlength="160" /></div>
     </div>
 
     <div class="card">
       <div class="section-title"><span class="section-num">2</span> Produto</div>
       <div class="field row2">
-        <div><label>Marca <span class="opt">(opcional)</span></label><input type="text" id="brand" placeholder="ex: Dietz Power" /></div>
-        <div><label>Modelo <span class="opt">(opcional)</span></label><input type="text" id="model" placeholder="ex: Sango Advanced" /></div>
+        <div><label>Marca <span class="opt">(opcional)</span></label><input type="text" id="brand" placeholder="ex: Dietz Power" maxlength="80" /></div>
+        <div><label>Modelo <span class="opt">(opcional)</span></label><input type="text" id="model" placeholder="ex: Sango Advanced" maxlength="80" /></div>
       </div>
     </div>
 
     <div class="card">
       <div class="section-title"><span class="section-num">3</span> Descrição do Problema</div>
-      <div class="field"><label>Descrição detalhada *</label><textarea id="description" placeholder="Descreva o problema com o máximo detalhe possível..."></textarea></div>
+      <div class="field"><label>Descrição detalhada *</label><textarea id="description" maxlength="4000" placeholder="Descreva o problema com o máximo detalhe possível..."></textarea></div>
     </div>
 
     <div class="card">
@@ -122,6 +122,9 @@
       <div class="photo-preview" id="mediaPreview"></div>
     </div>
 
+    <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+      <label>Não preencher este campo <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" /></label>
+    </div>
     <div class="progress" id="progressMsg"></div>
     <button class="submit-btn" id="submitBtn" onclick="submitForm()">Submeter Pedido de Assistência</button>
   </div>
@@ -157,12 +160,24 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const selectedMedia = [];
+const MAX_FOTO_MB = 25;
+const MAX_VIDEO_MB = 300;
+// Corta o texto ao tamanho máximo de cada campo (o formulário também tem maxlength).
+const curto = (v, n) => String(v || '').trim().slice(0, n);
+// Três algarismos ao acaso, sem o Math.random (previsível).
+const tresAlgarismos = () => { const a = new Uint32Array(1); crypto.getRandomValues(a); return String(100 + (a[0] % 900)); };
 
 
 window.handleMedia = function(input) {
   const preview = document.getElementById('mediaPreview');
   Array.from(input.files).forEach(file => {
     if (selectedMedia.length >= 5) return;
+    // Só fotografias e vídeos, e com tamanho máximo (o limite a sério tem de estar nas regras do Firebase).
+    const ehVideo = (file.type || '').startsWith('video/');
+    const ehImagem = (file.type || '').startsWith('image/');
+    if (!ehVideo && !ehImagem) { alert('Só é possível juntar fotografias ou vídeos.'); return; }
+    const maxMB = ehVideo ? MAX_VIDEO_MB : MAX_FOTO_MB;
+    if (file.size > maxMB * 1024 * 1024) { alert('O ficheiro "' + file.name + '" é demasiado grande (máximo ' + maxMB + ' MB ' + (ehVideo ? 'por vídeo' : 'por fotografia') + ').'); return; }
     selectedMedia.push(file);
     if (file.type.startsWith('video/')) {
       const div = document.createElement('div');
@@ -180,14 +195,20 @@ window.handleMedia = function(input) {
 };
 
 window.submitForm = async function() {
-  const clientName = document.getElementById('clientName').value.trim();
-  const nif = document.getElementById('nif').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const brand = document.getElementById('brand').value.trim();
-  const model = document.getElementById('model').value.trim();
-  const description = document.getElementById('description').value.trim();
+  const clientName = curto(document.getElementById('clientName').value, 120);
+  const nif = curto(document.getElementById('nif').value, 20);
+  const phone = curto(document.getElementById('phone').value, 30);
+  const email = curto(document.getElementById('email').value, 160);
+  const brand = curto(document.getElementById('brand').value, 80);
+  const model = curto(document.getElementById('model').value, 80);
+  const description = curto(document.getElementById('description').value, 4000);
 
+  // Campo escondido que as pessoas não veem: se vier preenchido, é um robô — não se envia nada.
+  if (document.getElementById('website') && document.getElementById('website').value) {
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('successSection').style.display = 'block';
+    return;
+  }
   if (!clientName || !phone || !description) {
     alert('Por favor preencha todos os campos obrigatórios (Nome completo, Telemóvel e Descrição do problema).');
     return;
@@ -206,13 +227,13 @@ window.submitForm = async function() {
   try {
     const now = new Date();
     const pad = n => String(n).padStart(2,'0');
-    const ref_num = `AT${String(now.getFullYear()).slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${String(Math.floor(Math.random()*900)+100)}`;
+    const ref_num = `AT${String(now.getFullYear()).slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${tresAlgarismos()}`;
 
     let mediaUrls = [];
     if (selectedMedia.length > 0) {
       for (let i = 0; i < selectedMedia.length; i++) {
         const file = selectedMedia[i];
-        const ext = file.name.split('.').pop() || (file.type.startsWith('video/') ? 'mp4' : 'jpg');
+        const ext = ((file.name.includes('.') ? file.name.split('.').pop() : '') || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || (file.type.startsWith('video/') ? 'mp4' : 'jpg');
         progress.textContent = `A carregar ficheiro ${i+1} de ${selectedMedia.length}...`;
         const storageRef = ref(storage, `assistencia/${ref_num}/${Date.now()}_${i}.${ext}`);
         await uploadBytes(storageRef, file);
@@ -254,7 +275,7 @@ window.submitForm = async function() {
 };
 
 window.resetForm = function() {
-  ['clientName','nif','phone','email','brand','model','description'].forEach(id => document.getElementById(id).value = '');
+  ['clientName','nif','phone','email','brand','model','description','website'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('mediaPreview').innerHTML = '';
   document.getElementById('progressMsg').textContent = '';
   selectedMedia.length = 0;
